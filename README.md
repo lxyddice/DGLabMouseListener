@@ -4,25 +4,33 @@
 
 本项目依赖 [https://github.com/open-toys-controller/open-DGLAB-controller](https://github.com/open-toys-controller/open-DGLAB-controller) 的ws协议
 
-#### 请不要修改keyBoard的配置，因为实在没整明白键盘事件的异步，越写越懵，求pr QAQ
+请不要修改keyBoard的配置，因为实在没整明白键盘事件的异步，越写越懵，求pr QAQ
 
-#### 请自己写ws地址，改IP就行
+请自己写ws地址，改IP就行
 
-#### 日志等级不用改了，很简洁（
+日志等级不用改了，很简洁（
 
-#### i是强度，t是0.1秒
+i是强度，t是0.1秒
+
+rand是随机化，t一般都是0，因为软件不接受小数，i可以适当填写，比如0.1即为 ±10% 强度
 
 ![image](https://github.com/lxyddice/DGLabMouseListener/assets/95132858/7f1879b3-bc43-4e10-b46d-3b0f3319c23e)
 
+<code>
 config = {
     "ws": "ws://192.168.137.208:60536/1",
     "level": "INFO",
+    "rand": {
+        "t": 0,
+        "i": 0.2
+    },
     "mouseClick": {
-        "left": {"i": 45, "t": 1},
+        "left": {"i": 50, "t": 1},
         "right": {"i": 60, "t": 1}
     },
     "keyBoard": {}
 }
+</code>
 
 ----
 ## 题外话

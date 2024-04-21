@@ -14,6 +14,8 @@ i是强度，t是0.1秒
 
 rand是随机化，t一般都是0，因为软件不接受小数，i可以适当填写，比如0.1即为 ±10% 强度
 
+鼠标长按就一直电，T^T
+
 ![image](https://github.com/lxyddice/DGLabMouseListener/assets/95132858/7f1879b3-bc43-4e10-b46d-3b0f3319c23e)
 
 <code>

@@ -6,17 +6,23 @@ import websockets
 from loguru import logger
 import tracemalloc
 import sys
+import random
 
 tracemalloc.start()
 # 请不要修改keyBoard的配置，因为实在没整明白键盘事件的异步，越写越懵，求pr QAQ
 # 请自己写ws地址
 # 日志等级不用改了，很简洁（
 # i是强度，t是0.1秒
+global config
 config = {
     "ws": "ws://192.168.137.208:60536/1",
     "level": "INFO",
+    "rand": {
+        "t": 0,
+        "i": 0.2
+    },
     "mouseClick": {
-        "left": {"i": 45, "t": 1},
+        "left": {"i": 50, "t": 1},
         "right": {"i": 60, "t": 1}
     },
     "keyBoard": {}
@@ -32,9 +38,22 @@ class CaoFanNiController:
         await event.wait()
 
     async def caoFanNi(self, i, ticks, event):
-        logger.warning(f"强度{i} 持续{ticks/10}秒")
-        await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击", "intensity": i, "ticks": ticks}))
-        await asyncio.sleep(ticks/10)
+        global config
+        if "rand" in config and config["rand"].get("t", 0) > 0 or config["rand"].get("i", 0) > 0:
+            
+            ticks_variation = ticks * random.uniform(-config["rand"]["t"], config["rand"]["t"])
+            i_variation = i * random.uniform(-config["rand"]["i"], config["rand"]["i"])
+            
+            new_ticks = int(ticks + ticks_variation)
+            new_i = int(i + i_variation)
+            
+            logger.warning(f"强度{i} 调整为{new_i} 持续{new_ticks/10}秒")
+            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击", "intensity": new_i, "ticks": new_ticks}))
+        else:
+            logger.warning(f"强度{i} 持续{ticks/10}秒")
+            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击", "intensity": i, "ticks": ticks}))
+        
+        await asyncio.sleep(new_ticks/10 if "new_ticks" in locals() else ticks/10)
         event.set()
 
 class MouseListener:

@@ -35,7 +35,8 @@ config = {
 </code>
 
 ----
-2.py 把 ws 转为 http
+
+## 2.py 把 ws 转为 http
 
 需要 py > 3.8 
 

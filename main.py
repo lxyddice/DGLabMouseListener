@@ -1,60 +1,26 @@
 import asyncio
 import json
+import re
 import time
-from pynput import mouse, keyboard
+import requests
+import random
 import websockets
 from loguru import logger
-import tracemalloc
 import sys
-import random
+from pynput import mouse, keyboard
+import tracemalloc
 
 tracemalloc.start()
-# 请不要修改keyBoard的配置，因为实在没整明白键盘事件的异步，越写越懵，求pr QAQ
-# 请自己写ws地址
-# 日志等级不用改了，很简洁（
-# i是强度，t是0.1秒
+
 global config
 config = {
-    "ws": "ws://192.168.137.208:60536/1",
+    "ws": "ws://192.168.10.247:60536/1",
     "level": "INFO",
-    "rand": {
-        "t": 0,
-        "i": 0.2
-    },
-    "mouseClick": {
-        "left": {"i": 50, "t": 1},
-        "right": {"i": 60, "t": 1}
-    },
+    "rand": {"t": 0, "i": 0.2},
+    "mouseClick": {"left": {"i": 60, "t": 1000}, "right": {"i": 0, "t": 1}},
+    "killEvent": {"kill": {"i": 61, "t": 10}, "killed": {"i": 100, "t": 1000}},
     "keyBoard": {}
 }
-
-class CaoFanNiController:
-    def __init__(self, websocket):
-        self.websocket = websocket
-
-    async def send_caoFanNi(self, i, ticks):
-        event = asyncio.Event()
-        await self.caoFanNi(i, ticks, event)
-        await event.wait()
-
-    async def caoFanNi(self, i, ticks, event):
-        global config
-        if "rand" in config and config["rand"].get("t", 0) > 0 or config["rand"].get("i", 0) > 0:
-            
-            ticks_variation = ticks * random.uniform(-config["rand"]["t"], config["rand"]["t"])
-            i_variation = i * random.uniform(-config["rand"]["i"], config["rand"]["i"])
-            
-            new_ticks = int(ticks + ticks_variation)
-            new_i = int(i + i_variation)
-            
-            logger.warning(f"强度{i} 调整为{new_i} 持续{new_ticks/10}秒")
-            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击", "intensity": new_i, "ticks": new_ticks}))
-        else:
-            logger.warning(f"强度{i} 持续{ticks/10}秒")
-            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击", "intensity": i, "ticks": ticks}))
-        
-        await asyncio.sleep(new_ticks/10 if "new_ticks" in locals() else ticks/10)
-        event.set()
 
 class MouseListener:
     def __init__(self, websocket, caoFanNiController):
@@ -79,8 +45,9 @@ class MouseListener:
                     if elapsed_time > config['mouseClick'][button_name]['t']:
                         logger.debug(f"{self.button_pressed} button long pressed")
                         asyncio.run_coroutine_threadsafe(
-                            self.caoFanNiController.send_caoFanNi(config['mouseClick'][button_name]['i'], config['mouseClick'][button_name]['t'] * 10),
-                            loop
+                            self.caoFanNiController.send_caoFanNi(config['mouseClick'][button_name]['i'],
+                                                                  config['mouseClick'][button_name]['t'] * 10),
+                            self.caoFanNiController.loop
                         )
                     logger.debug(f"{self.button_pressed} button released")
                 self.button_pressed = None
@@ -89,22 +56,99 @@ class MouseListener:
     async def run(self):
         try:
             while True:
-                if self.button_pressed and self.press_time:
-                    try:
-                        elapsed_time = time.time() - self.press_time
-                        if elapsed_time > 0.1:
-                            button_name = 'left' if self.button_pressed == mouse.Button.left else 'right'
-                            logger.debug(f"{self.button_pressed} button starts long pressing")
-                            await self.caoFanNiController.send_caoFanNi(config['mouseClick'][button_name]['i'], config['mouseClick'][button_name]['t'])
-                            time.sleep(0.1)
-                    except:
-                        # 才不告诉你，这里有小bug，出了就电你一下喵~
-                        await self.caoFanNiController.send_caoFanNi(config['mouseClick'][button_name]['i'], config['mouseClick'][button_name]['t'])
-                else:
-                    self.press_time = None
+                await asyncio.sleep(0.1)
         except KeyboardInterrupt:
             self.listener.stop()
 
+class WarThunder:
+    def __init__(self, websocket, caoFanNiController, loop):
+        self.websocket = websocket
+        self.caoFanNiController = caoFanNiController
+        self.loop = loop
+        self.url = "http://localhost:8111/hudmsg?lastEvt=0&lastDmg=0"
+        self.id = 0
+
+    def getKilled(self, text):
+        strs1 = '玩\t家'
+        substring2 = "击\t毁\t了"
+        pattern = re.escape(strs1) + r'.*' + re.escape(substring2)
+        match = re.search(pattern, text)
+        if match:
+            return True
+        else:
+            return False
+
+    def get_stat(self):
+        response = requests.get(self.url)
+
+        if response.status_code == 200:
+            data = response.json()
+            events = data["events"]
+            damage = data["damage"]
+
+            for event in events:
+                print(event)
+            if damage[-1]['id'] > self.id:
+                msg = damage[-1]['msg']
+                if '玩\t家' in msg:
+                    logger.warning(f"Event: {msg} You killed an enemy")
+                    if self.getKilled(text=msg):
+                        asyncio.run_coroutine_threadsafe(
+                            self.caoFanNiController.send_caoFanNi(config['killEvent']['kill']['i'],
+                                                                  config['killEvent']['kill']['t'] * 10),
+                            self.loop
+                        )
+                        self.id=damage[-1]['id']
+                    else:
+                        asyncio.run_coroutine_threadsafe(
+                            self.caoFanNiController.send_caoFanNi(config['killEvent']['killed']['i'],
+                                                                  config['killEvent']['killed']['t'] * 10),
+                            self.loop
+                        )
+                        self.id=damage[-1]['id']
+
+                else:
+                    self.id=damage[-1]['id']
+
+    async def run(self):
+        try:
+            while True:
+                self.get_stat()
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            pass
+
+class CaoFanNiController:
+    def __init__(self, websocket):
+        self.websocket = websocket
+        self.loop = asyncio.get_event_loop()
+
+    async def send_caoFanNi(self, i, ticks):
+        if i == 61:
+            print("inside")
+        event = asyncio.Event()
+        await self.caoFanNi(i, ticks, event)
+        await event.wait()
+
+    async def caoFanNi(self, i, ticks, event):
+        global config
+        if "rand" in config and config["rand"].get("t", 0) > 0 or config["rand"].get("i", 0) > 0:
+            ticks_variation = ticks * random.uniform(-config["rand"]["t"], config["rand"]["t"])
+            i_variation = i * random.uniform(-config["rand"]["i"], config["rand"]["i"])
+
+            new_ticks = int(ticks + ticks_variation)
+            new_i = int(i + i_variation)
+
+            logger.warning(f"强度{i} 调整为{new_i} 持续{new_ticks/10}秒")
+            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击",
+                                                  "intensity": new_i, "ticks": new_ticks}))
+        else:
+            logger.warning(f"强度{i} 持续{ticks/10}秒")
+            await self.websocket.send(json.dumps({"cmd": "set_pattern", "pattern_name": "冲击",
+                                                  "intensity": i, "ticks": ticks}))
+
+        await asyncio.sleep(new_ticks/10 if "new_ticks" in locals() else ticks/10)
+        event.set()
 
 class KeyListener:
     def __init__(self, loop, caoFanNiController):
@@ -120,19 +164,12 @@ class KeyListener:
             key_name = key.name
         if key_name in config['keyBoard']:
             logger.debug(f"{key_name} key pressed")
-            
-            asyncio.run(
-                self.caoFanNiController.send_caoFanNi(config['keyBoard'][key_name]['i'], config['keyBoard'][key_name]['t']),
+
+            asyncio.run_coroutine_threadsafe(
+                self.caoFanNiController.send_caoFanNi(config['keyBoard'][key_name]['i'],
+                                                      config['keyBoard'][key_name]['t']),
                 self.loop
             )
-
-
-    def schedule_send_caoFanNi(self, key_name):
-        logger.debug("start")
-        asyncio.ensure_future(
-            self.caoFanNiController.send_caoFanNi(config['keyBoard'][key_name]['i'], config['keyBoard'][key_name]['t'] * 10)
-        )
-
 
     def on_release(self, key):
         try:
@@ -144,7 +181,11 @@ class KeyListener:
             del self.key_pressed[key_name]
 
     async def run(self):
-        pass
+        try:
+            while True:
+                await asyncio.sleep(0.1)
+        except KeyboardInterrupt:
+            pass
 
 async def main_fn(ws):
     try:
@@ -153,14 +194,15 @@ async def main_fn(ws):
             loop = asyncio.get_event_loop()
             logger.success("Websocket连接成功")
             caoFanNiController = CaoFanNiController(websocket)
-            mouse_listener = MouseListener(websocket, caoFanNiController)
+            war_thunder = WarThunder(websocket, caoFanNiController, loop)
             key_listener = KeyListener(loop, caoFanNiController)
-            await asyncio.gather(mouse_listener.run(), key_listener.run())
+            mouse_listener = MouseListener(websocket, caoFanNiController)
+            await asyncio.gather(key_listener.run(), war_thunder.run(), mouse_listener.run())
     except websockets.exceptions.ConnectionClosed:
         logger.error("WebSocket连接已关闭")
     except Exception as e:
         logger.error(f"发生错误：{e}")
-        
+
 logger.remove()
 handler_id = logger.add(sys.stderr, level=config["level"])
 loop = asyncio.get_event_loop()

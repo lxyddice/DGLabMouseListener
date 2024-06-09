@@ -22,9 +22,17 @@ conda create --name venv python=3.9
 
 如下图所示
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/conda_create.png)
 
+按回车确定之后：
 
+![image](https://github.com/nobody-x-j/images/blob/main/conda_create_yes.png)
+
+输入 y， 然后回车
+
+![image](https://github.com/nobody-x-j/images/blob/main/conda_create_success.png)
+
+成功后应该长这样
 
 step 2: 使用vscode下载代码
 
@@ -34,35 +42,49 @@ step 2: 使用vscode下载代码
 code
 ```
 
+![image](https://github.com/nobody-x-j/images/blob/main/code.png)
+
 之后会弹出以下界面：
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_starting.png)
 
 2. 选择 打开文件夹 -> 打开或者新建一个你想要存代码的文件夹
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_open_folder.png)
 
-3. 在打开的界面选择 "Terminal" -> "New Terminal" （英文界面） /  “终端” -> “新建终端” (中文界面)
+打开后应该是这样：
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_folder_opened.png)
 
-4. 在终端输入 git clone https://github.com/nobody-x-j/DGLabMouseListener2.0.git 从而复制本代码到之前选择的文件夹
+3. 在打开的界面选择 "Terminal" -> "New Terminal" （英文界面） /  “终端” -> “新建终端” (中文界面) 如果看不到 "Terminal" / “终端” ，请把窗口全屏
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_new_terminal.png)
+
+打开后应该是这样：
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_terminal_opened.png)
+
+4. 在终端输入 git clone https://github.com/nobody-x-j/DGLabMouseListener2.git 从而复制本代码到之前选择的文件夹
 
 ```shell
-git clone https://github.com/nobody-x-j/DGLabMouseListener2.0.git
+git clone https://github.com/nobody-x-j/DGLabMouseListener2.git
 ```
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_terminal_clone.png)
 
 按回车确认后终端应该会有如下信息，说明你成功将代码存入你的电脑
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_terminal_clone_done.png)
 
 5. 在vscode窗口，按"ctrl + shift + p"(三个键同时按)，在跳出的窗口选择 “Python: Select Interpreter” -> 找到刚刚用miniconda3创建的虚拟环境venv -> "Terminal" -> "New Terminal" （英文界面） /  “终端” -> “新建终端” (中文界面) 此时新的终端的命令输入处最左侧出现（venv）则代表成功启动虚拟环境，否则请重启vscode，再 "Terminal" -> "New Terminal" （英文界面） /  “终端” -> “新建终端” (中文界面)， 若还是失败，请试着在miniconda3界面输入code启动vscode
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_ctrl_shift_p.png)
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_select_interpreter.png)
 
 成功后的终端：
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_venv_success.png)
 
 如果反复测试都不成功，尝试在终端输入：
 
@@ -70,31 +92,82 @@ git clone https://github.com/nobody-x-j/DGLabMouseListener2.0.git
 conda activate venv
 ```
 
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_venv_manual_activate.png)
+
 如果还不成功，说明之前的步骤操作有误，请删除miniconda3以及vscode，从step 0 重新开始
 
 step 3: 安装以及设置
 
 以下步骤必须确认终端的命令输入处最左侧出现（venv）方可进行
 
-1. 在终端输入 cd DGLabMouseListener2.0 切换到目标文件夹
+1. 在终端输入 cd DGLabMouseListener2 切换到目标文件夹
 
 ```shell
-cd DGLabMouseListener2.0
+cd DGLabMouseListener2
 ```
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_cd.png)
 
-2. 在终端输入 pip install -e . 来安装本工具（注意，"."是英文的.，不是句号，也不要漏掉，更不要缺少空格）
+按下回车后会看到：
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_cd_finish.png)
+
+2. 在终端输入 pip install requests websockets loguru pynput 来安装必要的前置程序包
 
 ```shell
-pip install -e .
+pip install requests websockets loguru pynput
 ```
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_pip_install.png)
 
 成功安装应该是这样的：
 
-![image]
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_pip_install_success.png)
 
 3. 在vscode界面的最左端（如图）
+
+![image](https://github.com/nobody-x-j/images/blob/main/vscode_config.png)
+
+选中config.py，将ws 里面的内容根据OTC控制器显示的内容自行修改（注：OTC控制器是本程序需要配套的手机app，[点此下载](https://github.com/open-toys-controller/open-DGLAB-controller/releases/latest/download/app-release.apk) [OTC控制器官网](https://github.com/open-toys-controller/open-DGLAB-controller/releases/tag/V1.2.0)）
+
+![image](https://github.com/lxyddice/DGLabMouseListener/assets/95132858/7f1879b3-bc43-4e10-b46d-3b0f3319c23e)
+
+4. 链接设备，开启娱乐模式后，在终端输入 python main.py 即可启动
+
+```shell
+python main.py
+```
+
+点击鼠标就能看到手机app上显示相应通道有输出了
+
+step 4: 再次开始游戏：
+
+安装之后，再次开始游戏，只需要打开miniconda3，输入 code
+
+```shell
+code
+```
+
+一般默认打开上次的文件夹，如果没有，请选择打开文件夹，选取程序所在文件夹，打开终端，输入：
+
+```shell
+cd DGLabMouseListener2
+```
+
+然后输入
+
+```shell
+python main.py
+```
+
+step 5: 一些自定义选项：
+
+在config.py文件中，有大量自定义项目，可阅读注释自行修改
+
+在DIY_patterns.py文件中，可以自定义波形，具体格式请参考DIY_patterns.py文件中的注释
+
+
+------------------------------------------以下是原来的说明----------------------------------------------
 
 
 本项目依赖 [https://github.com/open-toys-controller/open-DGLAB-controller](https://github.com/open-toys-controller/open-DGLAB-controller) 的ws协议
